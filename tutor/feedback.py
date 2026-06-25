@@ -7,7 +7,7 @@ from __future__ import annotations
 from tutor.evaluator import EvaluatorResult
 from tutor.interface import TutorInterface
 
-MASTERY_COLOR = "rainbow"
+MASTERY_COLOR = "gold"
 MISCONCEPTION_COLOR = "orange"
 MISCONCEPTION_PULSE_SECONDS = 0.8
 INSIGHT_COLOR = "#33CC66"  # soft green
