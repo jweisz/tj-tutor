@@ -17,6 +17,19 @@ from tutor.stats import InferenceStats
 from tutor.ui.app import TutorUI
 
 
+_NO_WORDS = {"no", "nope", "nah", "stop", "quit", "done", "finish", "finished", "end", "bye", "goodbye"}
+_YES_WORDS = {"y", "yes", "yeah", "yep", "yup", "sure", "ok", "okay", "alright",
+              "please", "again", "restart", "want", "like", "would", "love", "more", "let's"}
+
+
+def _wants_replay(answer: str) -> bool:
+    """True if the answer expresses a desire to replay. No-words take priority over yes-words."""
+    words = set(answer.lower().split())
+    if words & _NO_WORDS:
+        return False
+    return bool(words & _YES_WORDS)
+
+
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="tj-tutor",
@@ -85,7 +98,30 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     with ui:
-        orchestrator.run_session()
+        while True:
+            orchestrator.run_session()
+
+            interface.speak(
+                "Would you like to go through the lesson again? Say yes to restart or no to finish."
+            )
+            answer = interface.listen()
+            if not _wants_replay(answer):
+                interface.speak("Thanks for learning with TJBot today! Goodbye!")
+                break
+
+            # Replay: fresh session and stats, same lesson/provider/interface/terminal.
+            session = SessionState.new(lesson)
+            stats = InferenceStats()
+            ui.reset(session, stats)
+            orchestrator = Orchestrator(
+                lesson,
+                session,
+                evaluator_provider=provider,
+                tutor_provider=provider,
+                interface=interface,
+                stats=stats,
+                ui=ui,
+            )
 
     return 0
 

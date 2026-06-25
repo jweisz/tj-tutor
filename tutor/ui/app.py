@@ -59,6 +59,12 @@ class TutorUI:
     def refresh(self) -> None:
         self._redraw_header()
 
+    def reset(self, session: SessionState, stats: InferenceStats) -> None:
+        """Swap in a fresh session and stats for a replay without restarting the terminal."""
+        self._session = session
+        self._stats = stats
+        self._redraw_header()
+
     def log_event(self, kind: str, detail: str) -> None:
         """Print a color-coded line in the scrolling chat area."""
         if kind == "speak":
