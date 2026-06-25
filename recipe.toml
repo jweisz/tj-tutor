@@ -2,15 +2,27 @@
 
 [tutor]
 lesson_path = "lessons/space_basics.yaml"
-# "console" runs the entire experience through this terminal (typed input,
-# printed actions) -- safe everywhere, including on a Mac. "tjbot" makes real
-# speak()/listen()/wave()/shine() hardware calls -- only set this when
-# actually running on a TJBot.
-interface = "console"
+
+# This recipe can run using two user interfaces:
+# 1. "console" runs the entire experience through this terminal, where the user
+# types in their input and the system prints the responses to the console.
+# This mode is useful when debugging a lesson and it can run on your computer, no
+# TJBot required.
+# 2. "tjbot" uses the TJBot API to speak, listen, wave, and shine. This mode must
+# be run on a TJBot.
+# By default, we specify the "tjbot" interface here so that `mise run start` 
+# runs the recipe for your TJBot. You can switch the interface to "console" here,
+# or you can use the override `mise run start-console`.
+interface = "tjbot"
 
 [tutor.llm]
-provider = "ollama"            # "anthropic" | "ollama"
-ollama_model = "granite4.1:3b"          # used when provider = "ollama"
-anthropic_model = "claude-sonnet-4-6"   # used when provider = "anthropic"
-anthropic_effort = "low"       # "low" | "medium" | "high" -- anthropic only
-ollama_host = "http://localhost:11434"
+#provider = "ollama"                     # "anthropic" | "ollama"
+provider = "anthropic"
+
+# These parameters are used when provider = "ollama"
+ollama_model = "granite4.1:3b"          # we also recomend trying "gemma4:e2b"
+ollama_host = "http://localhost:11434"  # URL to your ollama instance
+
+# These parameters are used when provider = "anthropic"
+anthropic_model = "claude-sonnet-4-6"   # we also recommend trying "claude-opus-4-7"
+anthropic_effort = "low"                # "low" | "medium" | "high"

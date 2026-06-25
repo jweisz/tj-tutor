@@ -1,5 +1,6 @@
-"""argparse entry point. Parses --interface (console|tjbot) plus the other
-overrides, wires everything together, and runs the session."""
+"""argparse entry point. Parses --lesson/--interface, wires everything
+together, and runs the session. LLM provider/model/effort/host are
+recipe.toml-only -- see tutor/config.py."""
 
 from __future__ import annotations
 
@@ -22,15 +23,11 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         description="A Socratic dialogue tutor for TJBot, driven entirely by LLM calls.",
     )
     parser.add_argument("--lesson", help="path to a lesson plan YAML file")
-    parser.add_argument("--provider", choices=["anthropic", "ollama"], help="LLM backend")
-    parser.add_argument("--model", help="model name (provider-specific)")
-    parser.add_argument("--effort", choices=["low", "medium", "high"], help="Anthropic effort level")
     parser.add_argument(
         "--interface",
         choices=["console", "tjbot"],
         help="which frontend to use -- console (default, runs on this Mac) or tjbot (real hardware)",
     )
-    parser.add_argument("--ollama-host", help="Ollama server base URL")
     return parser.parse_args(argv)
 
 
@@ -40,14 +37,6 @@ def _apply_cli_overrides(config: AppConfig, args: argparse.Namespace) -> AppConf
         data["lesson_path"] = args.lesson
     if args.interface is not None:
         data["interface"] = args.interface
-    if args.provider is not None:
-        data["provider"]["kind"] = args.provider
-    if args.model is not None:
-        data["provider"]["model"] = args.model
-    if args.effort is not None:
-        data["provider"]["effort"] = args.effort
-    if args.ollama_host is not None:
-        data["provider"]["ollama_host"] = args.ollama_host
     return AppConfig.model_validate(data)
 
 

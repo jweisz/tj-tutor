@@ -126,7 +126,10 @@ class AnthropicProvider:
         # remain valid read points server-side without us re-marking them here --
         # see shared/prompt-caching.md's multi-turn pattern.
         if not messages:
-            return []
+            # The opening turn has no transcript yet -- the whole instruction
+            # lives in the system prompt -- but unlike Ollama's chat API, the
+            # Messages API rejects an empty `messages` array outright.
+            return [MessageParam(role="user", content="Begin.")]
         api_messages: list[MessageParam] = [
             MessageParam(role=m["role"], content=m["content"]) for m in messages[:-1]  # type: ignore[typeddict-item]
         ]

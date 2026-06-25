@@ -20,7 +20,7 @@ The hardware above is only needed when running with `--interface tjbot`. By defa
 Either way, you'll also need one LLM backend:
 
 - [Ollama](https://ollama.com) running locally with a model pulled (e.g. `ollama pull granite4.1:3b`) -- free, no API key, and the default.
-- An [Anthropic API key](https://console.anthropic.com) -- put it in a `.env` file and pass `--provider anthropic` for noticeably better dialogue quality and judgment. See [Configure](#configure) for how to set it up.
+- An [Anthropic API key](https://console.anthropic.com) -- put it in a `.env` file and set `provider = "anthropic"` in `recipe.toml` for noticeably better dialogue quality and judgment. See [Configure](#configure) for how to set it up.
 
 ## How It Works
 
@@ -53,7 +53,7 @@ anthropic_effort = "low"        # "low" | "medium" | "high" -- anthropic only
 ollama_host = "http://localhost:11434"
 ```
 
-Every setting can also be overridden for a single run without editing the file, via command-line flags (`--lesson`, `--interface`, `--provider`, `--model`, `--effort`, `--ollama-host`) or `TJ_TUTOR_*` environment variables.
+`lesson_path` and `interface` can also be overridden for a single run without editing the file, via `--lesson` and `--interface` command-line flags. Everything under `[tutor.llm]` (provider, model, effort, Ollama host) is recipe.toml-only -- edit the file to change your LLM backend.
 
 If `provider = "anthropic"`, you need an `ANTHROPIC_API_KEY`. Copy `.env.sample` to `.env` and fill in your key:
 
@@ -73,10 +73,10 @@ You can run this recipe using the `tjbot` command or you can run it manually usi
 
 ### Run using `tjbot run`
 
-Open a Terminal and run the following command from anywhere on your system:
+Open a Terminal and run the following command (this assumes you checked out the project to your `Desktop` folder):
 
 ```sh
-tjbot run /home/pi/Desktop/tj-tutor/tj-tutor
+tjbot run /home/pi/Desktop/tj-tutor/
 ```
 
 > [!NOTE]
@@ -125,14 +125,16 @@ This recipe ships with one lesson, `lessons/space_basics.yaml`, covering the thr
 
 ### Customization 2: Switch the LLM backend and model
 
-By default this recipe runs entirely offline against a local Ollama model, which is the fastest option for iterating on a lesson. For better dialogue quality and more reliable judgment of what a student actually understands, switch to Anthropic's API:
+By default this recipe runs entirely offline against a local Ollama model, which is the fastest option for iterating on a lesson. For better dialogue quality and more reliable judgment of what a student actually understands, switch to Anthropic's API by editing `[tutor.llm]` in `recipe.toml`:
 
-```sh
-echo "ANTHROPIC_API_KEY=sk-ant-..." >> .env   # one-time, see Configure
-uv run main.py --provider anthropic --model claude-sonnet-4-6 --effort low
+```toml
+[tutor.llm]
+provider = "anthropic"
+anthropic_model = "claude-sonnet-4-6"
+anthropic_effort = "low"        # "low" | "medium" | "high" -- trades latency/cost for response quality
 ```
 
-or make it the default by editing `[tutor.llm]` in `recipe.toml`. `anthropic_effort` trades latency/cost for response quality -- `low` keeps the conversation snappy, `medium`/`high` think more before each reply. Any locally-pulled Ollama model can be used the same way with `--model <name>`.
+(see [Configure](#configure) for setting up `ANTHROPIC_API_KEY` in `.env`). Any locally-pulled Ollama model can be used the same way via `ollama_model`.
 
 ## Troubleshoot
 

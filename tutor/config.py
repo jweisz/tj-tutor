@@ -1,18 +1,15 @@
-"""App configuration, cascading CLI flags > env vars > recipe.toml > built-in
-defaults. recipe.toml is read via TJBot.get_recipe_config(), which only
-parses TOML and never constructs a TJBot or touches hardware."""
+"""App configuration: recipe.toml > built-in defaults. recipe.toml is read via
+TJBot.get_recipe_config(), which only parses TOML and never constructs a
+TJBot or touches hardware."""
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from tutor.llm.factory import ProviderConfig
-
-ENV_PREFIX = "TJ_TUTOR_"
 
 
 class AppConfig(BaseModel):
@@ -26,7 +23,7 @@ def load_app_config(recipe_config_path: str = "recipe.toml") -> AppConfig:
     tutor_section = _read_recipe_tutor_section(recipe_config_path)
     if tutor_section:
         config = _apply_recipe_section(config, tutor_section)
-    return _apply_env_overrides(config)
+    return config
 
 
 def _read_recipe_tutor_section(recipe_config_path: str) -> dict[str, Any]:
@@ -70,17 +67,4 @@ def _apply_recipe_section(config: AppConfig, tutor_section: dict[str, Any]) -> A
             provider_data["model"] = llm_section["anthropic_model"]
         data["provider"] = provider_data
 
-    return AppConfig.model_validate(data)
-
-
-def _apply_env_overrides(config: AppConfig) -> AppConfig:
-    data = config.model_dump()
-    if value := os.environ.get(f"{ENV_PREFIX}LESSON"):
-        data["lesson_path"] = value
-    if value := os.environ.get(f"{ENV_PREFIX}INTERFACE"):
-        data["interface"] = value
-    if value := os.environ.get(f"{ENV_PREFIX}PROVIDER"):
-        data["provider"]["kind"] = value
-    if value := os.environ.get(f"{ENV_PREFIX}MODEL"):
-        data["provider"]["model"] = value
     return AppConfig.model_validate(data)

@@ -1,13 +1,13 @@
 [tools]
 python = "3.11"
 
-[tasks.start-ollama]
+[tasks.start]
 run = "uv run main.py"
-description = "Run recipe using Ollama backend"
+description = "Run recipe"
 
-[tasks.start-anthropic]
-run = "uv run main.py --provider anthropic"
-description = "Run recipe using Anthropic backend"
+[tasks.start-console]
+run = "uv run main.py --interface console"
+description = "Run recipe using the console interface"
 
 [tasks.lint]
 description = "Run lint checks"
