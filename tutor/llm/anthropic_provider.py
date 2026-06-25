@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 import anthropic
 from anthropic.types import MessageParam, TextBlockParam
+from dotenv import load_dotenv
 
 from tutor.llm.base import (
     LLMResponse,
@@ -30,7 +31,11 @@ class AnthropicProvider:
     ) -> None:
         self._model = model
         self._effort = effort
-        # No api_key kwarg: the SDK reads ANTHROPIC_API_KEY from the environment itself.
+        # Populate os.environ from a local .env file, if present, without
+        # clobbering a real shell-exported ANTHROPIC_API_KEY (load_dotenv's
+        # default: existing env vars win). No api_key kwarg below -- the SDK
+        # reads ANTHROPIC_API_KEY from the environment itself.
+        load_dotenv()
         self._client = anthropic.Anthropic()
 
     @property

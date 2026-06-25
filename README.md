@@ -20,7 +20,7 @@ The hardware above is only needed when running with `--interface tjbot`. By defa
 Either way, you'll also need one LLM backend:
 
 - [Ollama](https://ollama.com) running locally with a model pulled (e.g. `ollama pull granite4.1:3b`) -- free, no API key, and the default.
-- An [Anthropic API key](https://console.anthropic.com) -- set `ANTHROPIC_API_KEY` and pass `--provider anthropic` for noticeably better dialogue quality and judgment.
+- An [Anthropic API key](https://console.anthropic.com) -- put it in a `.env` file and pass `--provider anthropic` for noticeably better dialogue quality and judgment. See [Configure](#configure) for how to set it up.
 
 ## How It Works
 
@@ -53,7 +53,19 @@ anthropic_effort = "low"        # "low" | "medium" | "high" -- anthropic only
 ollama_host = "http://localhost:11434"
 ```
 
-Every setting can also be overridden for a single run without editing the file, via command-line flags (`--lesson`, `--interface`, `--provider`, `--model`, `--effort`, `--ollama-host`) or `TJ_TUTOR_*` environment variables. If `provider = "anthropic"`, set the `ANTHROPIC_API_KEY` environment variable before running -- the Anthropic SDK reads it automatically.
+Every setting can also be overridden for a single run without editing the file, via command-line flags (`--lesson`, `--interface`, `--provider`, `--model`, `--effort`, `--ollama-host`) or `TJ_TUTOR_*` environment variables.
+
+If `provider = "anthropic"`, you need an `ANTHROPIC_API_KEY`. Copy `.env.sample` to `.env` and fill in your key:
+
+```sh
+cp .env.sample .env
+# then edit .env and set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+`.env` is gitignored, so the key never gets committed, and it persists across runs/reboots (handy on a headless Pi) without polluting your shell profile. The recipe loads it automatically on startup via [python-dotenv](https://pypi.org/project/python-dotenv/); a real exported `ANTHROPIC_API_KEY` environment variable always takes precedence over the file if both are set.
+
+> [!TIP]
+> If you're using Claude Code to develop this recipe, this repo's `.claude/settings.json` already denies the `Read` tool access to `./.env`, so Claude can't read your key out of the file. That blocks the normal file-reading tools (Read/Grep/Glob), but it isn't an airtight sandbox -- a Bash command can still technically `cat .env` if explicitly instructed to. Don't paste your key into chat, and treat this as a guardrail against accidental exposure, not a hard security boundary.
 
 ## Run
 
@@ -116,7 +128,7 @@ This recipe ships with one lesson, `lessons/space_basics.yaml`, covering the thr
 By default this recipe runs entirely offline against a local Ollama model, which is the fastest option for iterating on a lesson. For better dialogue quality and more reliable judgment of what a student actually understands, switch to Anthropic's API:
 
 ```sh
-export ANTHROPIC_API_KEY=sk-ant-...
+echo "ANTHROPIC_API_KEY=sk-ant-..." >> .env   # one-time, see Configure
 uv run main.py --provider anthropic --model claude-sonnet-4-6 --effort low
 ```
 
