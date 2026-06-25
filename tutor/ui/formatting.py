@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-from collections import deque
-
 from rich.table import Table
 from rich.text import Text
 
@@ -19,8 +17,7 @@ STATUS_COLORS = {
     ConceptStatus.MASTERED: "green",
 }
 
-EVIDENCE_DISPLAY_LIMIT = 8
-DEBUG_DISPLAY_LIMIT = 30
+EVIDENCE_DISPLAY_LIMIT = 5
 EXCERPT_LENGTH = 60
 
 
@@ -63,11 +60,14 @@ def render_plan_table(lesson: LessonPlan, session: SessionState) -> Table:
 
 
 def render_evidence_panel(lesson: LessonPlan, session: SessionState) -> Table:
+    # Explicit ratios + no_wrap keeps every row on exactly one line — without
+    # this, the "Said" excerpts wrap to 3+ lines at half-terminal width and the
+    # header grows unboundedly as evidence accumulates.
     table = Table(expand=True)
-    table.add_column("Turn")
-    table.add_column("Concept")
-    table.add_column("Said")
-    table.add_column("Criteria met")
+    table.add_column("Turn", ratio=1, no_wrap=True)
+    table.add_column("Concept", ratio=3, no_wrap=True)
+    table.add_column("Said", ratio=4, no_wrap=True)
+    table.add_column("Criteria met", ratio=2, no_wrap=True)
 
     all_evidence = [
         (concept_id, evidence)
@@ -129,8 +129,3 @@ def render_stats_table(stats: InferenceStats) -> Table:
     return table
 
 
-def render_debug_text(event_log: deque[str]) -> Text:
-    lines = list(event_log)[-DEBUG_DISPLAY_LIMIT:]
-    if not lines:
-        return Text("(no events yet)", style="grey58")
-    return Text("\n".join(lines))

@@ -110,7 +110,7 @@ class AnthropicProvider:
             latency_ms=latency_ms,
             model=response.model,
             provider_name="anthropic",
-            raw=response.model_dump(mode="json"),
+            raw={},  # ParsedMessage.model_dump() triggers PydanticSerializationUnexpectedValue
         )
 
     @staticmethod

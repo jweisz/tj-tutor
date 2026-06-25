@@ -22,6 +22,7 @@ class DashboardHooks(Protocol):
 
     def paused(self) -> AbstractContextManager[None]: ...
     def log_event(self, kind: str, detail: str) -> None: ...
+    def prompt_user(self) -> str: ...
 
 
 class ConsoleInterface:
@@ -34,28 +35,19 @@ class ConsoleInterface:
         self._ui = ui
 
     def speak(self, message: str) -> None:
-        with self._ui.paused():
-            self._ui.log_event("speak", message)
-            print(f"\n🤖 TJBot says: {message}\n")
+        self._ui.log_event("speak", message)
 
     def listen(self) -> str:
-        with self._ui.paused():
-            return input("🎤 You say: ").strip()
+        return self._ui.prompt_user()
 
     def wave(self) -> None:
-        with self._ui.paused():
-            self._ui.log_event("wave", "*waves arm*")
-            print("🦾 [TJBot waves its arm]")
+        self._ui.log_event("wave", "waves arm")
 
     def shine(self, color: str) -> None:
-        with self._ui.paused():
-            self._ui.log_event("shine", color)
-            print(f"💡 [TJBot LED shines {color}]")
+        self._ui.log_event("shine", color)
 
     def pulse(self, color: str, duration: float = 1.0) -> None:
-        with self._ui.paused():
-            self._ui.log_event("pulse", f"{color} for {duration:.1f}s")
-            print(f"💡 [TJBot LED pulses {color} for {duration:.1f}s]")
+        self._ui.log_event("pulse", f"{color} for {duration:.1f}s")
 
 
 class TJBotInterface:

@@ -77,8 +77,15 @@ def _render_concept_context(concept: Concept, state: ConceptState, hint_text: st
         )
     if missing:
         lines.append(
-            "Still missing -- aim your next question at getting them to reason their way to one "
-            "of these specifically: " + "; ".join(missing)
+            "IMPORTANT -- not done yet: the student has NOT demonstrated all criteria for this "
+            "concept. Do NOT celebrate, summarize, or treat this topic as finished. Do not say "
+            "anything that sounds like a conclusion or a handoff to the next topic. "
+            "If their last answer was partially or fully correct, acknowledge it briefly in "
+            "ONE sentence (e.g. 'yes, exactly!'), then immediately ask a follow-up question "
+            "that gets them to supply the remaining reasoning themselves -- do NOT confirm by "
+            "restating their answer or the missing idea back to them. Your question must target "
+            "one of these still-missing ideas (they must say it, not you): "
+            + "; ".join(missing)
         )
 
     if not state.evidence_log:
@@ -165,12 +172,20 @@ def build_tutor_messages(
             )
 
     if evaluator_result.relevance == Relevance.OFF_TOPIC:
+        missing_desc = [c.description for c in current.mastery_rubric if c.id not in state.criteria_met]
+        if missing_desc:
+            redirect = (
+                "steers them toward the next missing idea they still need to reason out: "
+                + "; ".join(missing_desc)
+            )
+        else:
+            redirect = "picks the conversation back up from wherever you left off on the current concept"
         sections.append(
             "## Off-topic remark\n"
             "What the student just said isn't about the concept you're teaching. Briefly and "
-            "warmly acknowledge it in a sentence (tangents matter!), then ask a question that "
-            "picks the conversation back up from wherever you left off on the current concept -- "
-            "don't restart it from scratch."
+            "warmly acknowledge it in one short sentence (tangents matter!), then immediately "
+            f"ask a question that {redirect}. Do not treat the tangent as a sign the topic is "
+            "finished."
         )
 
     system = "\n\n".join(sections)

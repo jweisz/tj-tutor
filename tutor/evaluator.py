@@ -120,14 +120,30 @@ def build_evaluator_messages(
     current = lesson.get_concept(session.current_concept_id)
     siblings = [c for c in lesson.concepts if c.id != current.id]
 
-    system = "\n\n".join(
-        [
-            EVALUATOR_PERSONA.format(audience=lesson.audience),
-            _render_current_concept(current),
-            _render_sibling_concepts(siblings),
-        ]
+    # The last tutor question is essential context for interpreting short or
+    # fragmented student answers.  Without it, "a longer ago past" is opaque;
+    # with it, the evaluator knows it's a direct correct answer to "do farther
+    # stars show a more recent or longer-ago past?" and can credit the criterion.
+    last_tutor_q = next(
+        (m["content"] for m in reversed(session.transcript) if m["role"] == "assistant"),
+        None,
     )
 
-    history = session.transcript[-HISTORY_TURNS_FOR_EVALUATOR:] if HISTORY_TURNS_FOR_EVALUATOR > 0 else []
-    messages: list[Message] = [*history, {"role": "user", "content": student_utterance}]
+    sections = [
+        EVALUATOR_PERSONA.format(audience=lesson.audience),
+        _render_current_concept(current),
+        _render_sibling_concepts(siblings),
+    ]
+    if last_tutor_q:
+        sections.append(
+            "## What the tutor just asked (what the student is directly responding to)\n"
+            f"{last_tutor_q}\n\n"
+            "Short or fragment answers must be judged in this context. If the fragment is a "
+            "direct, correct answer to the question above, credit the relevant criterion -- "
+            "e.g. 'a longer ago past' as an answer to 'do farther stars show a more recent "
+            "or longer-ago past?' clearly demonstrates distance_means_older_light."
+        )
+
+    system = "\n\n".join(sections)
+    messages: list[Message] = [{"role": "user", "content": student_utterance}]
     return system, messages
