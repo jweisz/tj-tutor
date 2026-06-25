@@ -3,6 +3,11 @@ concrete frontend it is -- business logic stays self-contained."""
 
 from __future__ import annotations
 
+import random
+import threading
+from contextlib import contextmanager
+from collections.abc import Iterator
+
 from tutor.evaluator import EvaluatorResult, build_evaluator_messages
 from tutor.feedback import apply_feedback
 from tutor.interface import TutorInterface
@@ -17,6 +22,35 @@ EMPTY_INPUT_REPROMPT = "Sorry, I didn't catch that -- can you say that again?"
 TUTOR_FAILURE_FALLBACK = "Hmm, my brain glitched for a second there. Can you say that again?"
 STUCK_TURNS_BEFORE_HINT_BUMP = 2
 
+THINKING_COLOR = "blue"
+THINKING_DONE_COLOR = "black"
+_THINKING_PHRASES = [
+    "Give me a moment, I'm thinking...",
+    "Hmm, let me think about that for a second...",
+    "One moment while I figure this out...",
+]
+
+
+@contextmanager
+def _thinking(interface: "TutorInterface", delay_secs: float) -> Iterator[None]:
+    """Set LED to blue during LLM inference. If inference takes longer than
+    delay_secs, speak a filler phrase so the student knows we haven't gone
+    silent. Blocks on any in-flight phrase before returning so the actual
+    reply always comes after, never interleaved."""
+    interface.shine(THINKING_COLOR)
+    timer = threading.Timer(
+        delay_secs,
+        lambda: interface.speak(random.choice(_THINKING_PHRASES)),
+    )
+    timer.daemon = True
+    timer.start()
+    try:
+        yield
+    finally:
+        timer.cancel()
+        timer.join()  # wait if the filler phrase is mid-speech
+        interface.shine(THINKING_DONE_COLOR)
+
 
 class Orchestrator:
     def __init__(
@@ -29,6 +63,7 @@ class Orchestrator:
         interface: TutorInterface,
         stats: InferenceStats,
         ui: TutorUI,
+        thinking_delay_secs: float = 3.0,
     ) -> None:
         self.lesson = lesson
         self.session = session
@@ -37,6 +72,7 @@ class Orchestrator:
         self.interface = interface
         self.stats = stats
         self.ui = ui
+        self._thinking_delay_secs = thinking_delay_secs
 
     def run_session(self) -> None:
         self._run_opening()
@@ -58,9 +94,11 @@ class Orchestrator:
                 f"to kick things off: {current.hook_question}",
             ]
         )
-        response = self.tutor_provider.complete_text(system, [])
+        with _thinking(self.interface, self._thinking_delay_secs):
+            response = self.tutor_provider.complete_text(system, [])
         self.stats.record("tutor", response)
         self.interface.speak(response.text)
+        self.interface.wave()
         self.session.transcript.append({"role": "assistant", "content": response.text})
         self.ui.refresh()
 
@@ -71,31 +109,32 @@ class Orchestrator:
             self.interface.speak(EMPTY_INPUT_REPROMPT)
             return
 
-        # 2. Evaluate (LLM call #1, structured)
-        result = self._evaluate(utterance)
+        with _thinking(self.interface, self._thinking_delay_secs):
+            # 2. Evaluate (LLM call #1, structured)
+            result = self._evaluate(utterance)
 
-        # 3. Branch on relevance + 4. Check mastery
-        just_mastered = False
-        resuming_transition_hint: str | None = None
-        if result.relevance != Relevance.OFF_TOPIC and result.target_concept_id in self.session.concepts:
-            self._apply_relevance_branch(result)
-            just_mastered, resuming_transition_hint = self._check_mastery()
-        else:
-            if result.relevance != Relevance.OFF_TOPIC:
-                self.ui.log_debug(
-                    f"[orchestrator] evaluator gave relevance={result.relevance.value} but "
-                    f"target_concept_id={result.target_concept_id!r} is not a known concept; "
-                    "treating this turn as off_topic"
-                )
-                result = EvaluatorResult(relevance=Relevance.OFF_TOPIC, confidence="low")
+            # 3. Branch on relevance + 4. Check mastery
+            just_mastered = False
+            resuming_transition_hint: str | None = None
+            if result.relevance != Relevance.OFF_TOPIC and result.target_concept_id in self.session.concepts:
+                self._apply_relevance_branch(result)
+                just_mastered, resuming_transition_hint = self._check_mastery()
+            else:
+                if result.relevance != Relevance.OFF_TOPIC:
+                    self.ui.log_debug(
+                        f"[orchestrator] evaluator gave relevance={result.relevance.value} but "
+                        f"target_concept_id={result.target_concept_id!r} is not a known concept; "
+                        "treating this turn as off_topic"
+                    )
+                    result = EvaluatorResult(relevance=Relevance.OFF_TOPIC, confidence="low")
 
-        # 5. Generate tutor reply (LLM call #2, free text)
-        context = TutorSpeechContext(
-            just_mastered=just_mastered,
-            resuming_transition_hint=resuming_transition_hint,
-            session_complete=self.session.session_complete,
-        )
-        reply_text = self._generate_reply(utterance, result, context)
+            # 5. Generate tutor reply (LLM call #2, free text)
+            context = TutorSpeechContext(
+                just_mastered=just_mastered,
+                resuming_transition_hint=resuming_transition_hint,
+                session_complete=self.session.session_complete,
+            )
+            reply_text = self._generate_reply(utterance, result, context)
 
         # 7. Speak, then physically react (6: misconception/mastery/insight feedback)
         self.interface.speak(reply_text)

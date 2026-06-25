@@ -57,7 +57,7 @@ def build_interface(config: AppConfig, ui: TutorUI) -> TutorInterface:
     if config.interface == "console":
         return ConsoleInterface(ui)
     if config.interface == "tjbot":
-        return TJBotInterface()
+        return TJBotInterface(listen_timeout_secs=config.listen_reprompt_secs)
     raise ValueError(f"unknown interface: {config.interface!r}")
 
 
@@ -95,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         interface=interface,
         stats=stats,
         ui=ui,
+        thinking_delay_secs=config.thinking_delay_secs,
     )
 
     with ui:
@@ -121,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
                 interface=interface,
                 stats=stats,
                 ui=ui,
+                thinking_delay_secs=config.thinking_delay_secs,
             )
 
     return 0

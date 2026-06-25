@@ -26,6 +26,7 @@ def apply_feedback(
     if just_mastered:
         interface.shine(MASTERY_COLOR)
         interface.wave()
+        interface.wave()
         return
 
     if evaluator_result.demonstrates_misconception_id is not None:

@@ -54,11 +54,12 @@ class TJBotInterface:
     """The real frontend. Only ever instantiated when --interface tjbot is
     explicitly selected -- never auto-detected, never the default."""
 
-    def __init__(self) -> None:
+    def __init__(self, listen_timeout_secs: float | None = None) -> None:
         # Local import: only touch the hardware-aware tjbot-ce package when
         # this class is actually instantiated.
         from tjbot import TJBot
 
+        self._listen_timeout_secs = listen_timeout_secs
         self._tj = TJBot(
             override_config={
                 "hardware": {
@@ -75,7 +76,7 @@ class TJBotInterface:
         self._tj.speak(message)
 
     def listen(self) -> str:
-        return self._tj.listen()
+        return self._tj.listen(timeout=self._listen_timeout_secs)
 
     def wave(self) -> None:
         self._tj.wave()

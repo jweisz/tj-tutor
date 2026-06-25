@@ -15,6 +15,13 @@ lesson_path = "lessons/space_basics.yaml"
 # or you can use the override `mise run start-console`.
 interface = "tjbot"
 
+# Seconds of LLM inference before TJBot says "give me a moment, I'm thinking..."
+thinking_delay_secs = 3.0
+
+# Seconds of microphone silence before giving up and re-prompting the student
+# (TJBot interface only; console interface ignores this)
+listen_reprompt_secs = 5.0
+
 [tutor.llm]
 #provider = "ollama"                     # "anthropic" | "ollama"
 provider = "anthropic"

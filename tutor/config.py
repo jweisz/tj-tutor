@@ -16,6 +16,8 @@ class AppConfig(BaseModel):
     lesson_path: Path = Path("lessons/space_basics.yaml")
     interface: Literal["console", "tjbot"] = "console"
     provider: ProviderConfig = Field(default_factory=ProviderConfig)
+    thinking_delay_secs: float = 3.0
+    listen_reprompt_secs: float = 5.0
 
 
 def load_app_config(recipe_config_path: str = "recipe.toml") -> AppConfig:
@@ -48,6 +50,10 @@ def _apply_recipe_section(config: AppConfig, tutor_section: dict[str, Any]) -> A
         data["lesson_path"] = tutor_section["lesson_path"]
     if "interface" in tutor_section:
         data["interface"] = tutor_section["interface"]
+    if "thinking_delay_secs" in tutor_section:
+        data["thinking_delay_secs"] = float(tutor_section["thinking_delay_secs"])
+    if "listen_reprompt_secs" in tutor_section:
+        data["listen_reprompt_secs"] = float(tutor_section["listen_reprompt_secs"])
 
     llm_section = tutor_section.get("llm", {})
     if isinstance(llm_section, dict) and llm_section:
