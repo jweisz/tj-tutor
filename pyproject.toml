@@ -1,0 +1,33 @@
+[project]
+name = "tj-tutor"
+version = "1.0.0"
+description = "A Socratic, LLM-driven tutor recipe for TJBot -- teaches any subject via lesson plans, not a hardcoded dialogue tree"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.111.0",
+    "ollama>=0.6.2",
+    "pydantic>=2.13.4",
+    "pyyaml>=6.0.3",
+    "rich>=15.0.0",
+    "tjbot-ce",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
+    "ruff>=0.15.19",
+    "types-pyyaml>=6.0.12.20260518",
+]
+
+[[tool.mypy.overrides]]
+# tjbot-ce ships no py.typed marker / stubs; this is the real TJBot hardware
+# library, only imported inside TJBotInterface / config's recipe.toml reader.
+module = "tjbot.*"
+ignore_missing_imports = true

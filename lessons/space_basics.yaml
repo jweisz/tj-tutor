@@ -1,0 +1,200 @@
+id: space_basics
+title: 'Space Basics: Light, Stars, and Years'
+audience: children ages 6-8
+default_concept_order:
+- looking_back_in_time
+- stars_are_suns
+- a_year_is_an_orbit
+concepts:
+- id: looking_back_in_time
+  domain: space
+  title: Looking Up Is Looking Back in Time
+  summary: Light travels at a fixed (very fast, but not infinite) speed. Because stars and planets are
+    so far away, the light reaching our eyes left its source long ago -- so when we look at the night
+    sky, we are seeing the past, not the present.
+  hook_question: Have you ever noticed that during a thunderstorm, you see the lightning flash first,
+    and then you hear the thunder boom a little bit later? Why do you think that happens?
+  teaching_strategy: 'Lead with the thunder-and-lightning delay the child already has experience with:
+    ask them to recall or imagine seeing a flash and then waiting for the boom. Guide them to realize
+    the flash and the boom happen at the very same moment, but light reaches us faster than sound, so
+    we notice the gap. Once they''ve grasped that ''things that travel'' can arrive at different times
+    depending on speed and distance, introduce that light also travels (very fast, but not instantly),
+    and ask what that would mean for looking at something very far away, like a star. Do NOT simply tell
+    them ''light takes time to travel'' as a fact early on -- get them to reconstruct that idea themselves
+    from the thunder/lightning pattern first, and only confirm it once they''ve proposed something close
+    to it themselves. The end goal is for them to say, in their own words, that what we see in the sky
+    already happened a while ago.'
+  misconceptions:
+  - id: instant_seeing
+    description: Believes that seeing something happen and the thing happening occur at the exact same
+      instant, with no travel time at all for light.
+    correction_hook: 'Bring them back to the thunder and lightning: ask whether the flash and the boom
+      happened at different times, or just sounded/looked that way because of how fast each one travels
+      to us.'
+  - id: only_sound_is_slow
+    description: Believes light is the special case that's instant, and only sound has a travel delay
+      -- rather than understanding both travel, just at very different speeds.
+    correction_hook: Ask what would happen if a star were so unimaginably far away that even very fast
+      light would need a long time to cross that distance -- would it still arrive 'instantly'?
+  mastery_rubric:
+  - id: light_takes_time
+    description: States, in their own words, that light takes time to travel from its source to our eyes
+      -- it doesn't arrive instantly.
+    example_phrases:
+    - the light has to travel here first
+    - it's not happening right now, the light is still on its way
+    - light takes a little while to get to us, just like the thunder
+  - id: distance_means_older_light
+    description: 'Connects distance to age of the light: farther away means the light left longer ago.'
+    example_phrases:
+    - if it's really far away, the light is really old by the time we see it
+    - close stars show us newer light than far away stars
+  - id: sky_shows_the_past
+    description: Concludes that looking at the night sky means seeing the past, not the present moment.
+    example_phrases:
+    - we're basically time travelers when we look up
+    - that star might not even still be there, we're just seeing old light from it
+  hint_ladder:
+  - level: 1
+    hint_text: 'Ask again, more slowly: when lightning flashes, do you hear the thunder at the exact same
+      second, or a moment later? Why might that be?'
+  - level: 2
+    hint_text: Suggest that both light and sound have to 'travel' to reach us, just at very different
+      speeds -- ask which one they think arrives faster, and why we'd still notice ANY delay if something
+      is far enough away.
+  - level: 3
+    hint_text: 'Ask directly: if a star is so far away that even speedy light takes years to get here,
+      is the picture we''re seeing of the star ''right now,'' or from a while ago?'
+  celebration_cue: Express genuine delighted surprise that they've figured out we're basically time-travelers
+    every time we look up at the night sky -- that's a big, grown-up idea!
+  relates_to:
+  - concept_id: stars_are_suns
+    transition_hint: Now that we know starlight takes a long time to reach us because stars are so far
+      away... doesn't that make you wonder how big and bright something would have to be for its light
+      to reach us across all that distance at all?
+- id: stars_are_suns
+  domain: stars
+  title: Stars Are Other Suns, Just Impossibly Far Away
+  summary: The tiny twinkling points of light in the night sky are not actually small -- they are huge,
+    sun-like fireballs. They only look tiny because of their staggering distance from us, not because
+    of their actual size.
+  hook_question: If you held a flashlight right next to your face, then had a friend walk far, far away
+    with the very same flashlight, would it still look just as big and bright to you?
+  teaching_strategy: 'Use the flashlight-at-a-distance idea: something doesn''t actually shrink as it
+    moves away, it just LOOKS smaller because it''s farther from your eyes. Build from a near example
+    (a flashlight, then a car''s headlights from down the street, then an airplane high in the sky) toward
+    the idea that the SAME object looks tinier and tinier the farther away it gets, without actually changing
+    size. Then connect this to our own Sun: ask what the Sun would look like if you got farther and farther
+    away from it -- eventually it would look like just a tiny dot, like the stars do. Do NOT simply state
+    ''stars are big suns'' as a fact -- have the child arrive at it by reasoning from ''things look smaller
+    far away'' plus ''our Sun is a star'' to ''other stars must actually be huge too, we just can''t tell
+    because they''re so far.'''
+  misconceptions:
+  - id: stars_are_small_lights
+    description: Believes stars are literally small, sparkly lights stuck onto the sky, fundamentally
+      different from the Sun.
+    correction_hook: Ask what they think the Sun would look like from very, very far away -- would it
+      still look like the huge ball we see during the day, or would it shrink to a tiny dot too?
+  - id: size_changes_with_distance
+    description: Believes an object actually gets physically smaller as it moves farther away, rather
+      than just appearing smaller.
+    correction_hook: Ask if a friend who walks far away actually shrinks, or if they just look smaller
+      to our eyes while staying the same size up close.
+  mastery_rubric:
+  - id: same_kind_of_thing_as_sun
+    description: States that stars are the same kind of object as our Sun -- huge, glowing balls of fire/gas
+      -- not a fundamentally different, smaller kind of light.
+    example_phrases:
+    - stars are suns too, just far away
+    - our Sun is basically a star up close
+  - id: distance_explains_tiny_appearance
+    description: Explains that stars look tiny specifically because of their enormous distance, not because
+      they are actually small.
+    example_phrases:
+    - they just look small because they're SO far away
+    - if we got closer, a star would look huge, like our Sun does
+  hint_ladder:
+  - level: 1
+    hint_text: 'Go back to the flashlight: does a flashlight actually get smaller when your friend carries
+      it far away, or does it just look smaller from where you''re standing?'
+  - level: 2
+    hint_text: Ask what our own Sun is -- is the Sun a star? If so, what would the Sun look like from
+      very, very far away in space?
+  - level: 3
+    hint_text: 'Tell them: every single star they see at night is actually a giant ball of fire, just
+      like our Sun -- ask why, then, do they think it looks like such a tiny dot?'
+  celebration_cue: Celebrate that they've realized the night sky is secretly full of other suns -- that
+    the universe is way bigger and more amazing than it first looks!
+  relates_to:
+  - concept_id: looking_back_in_time
+    transition_hint: Since stars are gigantic suns incredibly far away, remember what that means about
+      the light reaching us from them -- how old do you think that starlight might be by the time it gets
+      here?
+  - concept_id: a_year_is_an_orbit
+    transition_hint: If our own Sun is just one star among many, what do you think might be circling around
+      OTHER stars out there, the same way things circle around our Sun?
+- id: a_year_is_an_orbit
+  domain: planets
+  title: A 'Year' Is Just One Trip Around the Sun
+  summary: A 'year' is defined as one full orbit around the Sun. Since farther planets travel a longer
+    path, and travel it more slowly, a 'year' on a distant planet like Saturn is far longer than one Earth
+    year.
+  hook_question: If you walked all the way around your house in a big circle and ended up back where you
+    started, what would you call that -- and what if your friend had to walk around something MUCH bigger,
+    like a whole park? Who do you think would take longer?
+  teaching_strategy: 'Build on the idea of a ''lap'' around a track or around the house: going all the
+    way around and coming back to where you started is one full loop. Introduce that the Earth does exactly
+    this around the Sun, and that one full loop IS what we call a year. Then use the bigger-track idea:
+    ask what would happen if a planet had to loop around a MUCH bigger track around the Sun (like Saturn
+    does) -- would its ''year'' (one full loop) take a shorter or longer time than Earth''s? Guide them
+    to combine ''bigger loop = more distance to cover'' with ''a year = one loop'' to conclude that farther
+    planets have longer years. Do NOT just state ''Saturn''s year is 29 Earth years'' as a fact to memorize
+    -- the win is the child reasoning out WHY a farther planet''s year must be longer, not memorizing
+    the specific number.'
+  misconceptions:
+  - id: year_is_universal
+    description: Believes a 'year' is the same fixed length of time everywhere, like a basic unit of the
+      universe, rather than being defined by Earth's own orbit specifically.
+    correction_hook: 'Ask: what IS a year, really -- is it just ''time passing,'' or is it tied to something
+      Earth actually does (one loop around the Sun)? What would ''a year'' mean on a planet that circles
+      the Sun on a totally different-sized loop?'
+  - id: distance_doesnt_affect_orbit_time
+    description: Doesn't connect orbital distance to how long a trip around the Sun takes -- assumes all
+      planets just take 'about the same' time.
+    correction_hook: 'Go back to the bigger-track idea: if your friend has to walk around a track twice
+      as big as yours, and isn''t running any faster, would they finish their lap in the same amount of
+      time as you?'
+  mastery_rubric:
+  - id: year_equals_one_orbit
+    description: States that a year is defined as one full trip (orbit) of a planet around the Sun.
+    example_phrases:
+    - a year is one whole lap around the Sun
+    - Earth takes a year to go all the way around the Sun once
+  - id: farther_means_longer_year
+    description: Reasons that a planet farther from the Sun has a longer year because it has a bigger
+      loop to travel.
+    example_phrases:
+    - Saturn is way farther out so its lap is way bigger, so its year is longer
+    - a bigger circle around the Sun takes more time to finish
+  hint_ladder:
+  - level: 1
+    hint_text: Think of Earth like a runner doing one big lap around a track, with the Sun in the middle.
+      One full lap is one year. Now imagine another runner on a MUCH bigger track around the very same
+      middle point -- whose lap takes longer to finish?
+  - level: 2
+    hint_text: 'Ask: if you and a friend both walk at about the same speed, but your friend''s loop around
+      the park is twice as big as your loop around your yard, who finishes first?'
+  - level: 3
+    hint_text: Tell them that Saturn circles the Sun on a MUCH bigger loop than Earth does -- ask what
+      that should mean for how long a 'year' is on Saturn compared to a year on Earth.
+  celebration_cue: Celebrate that they've figured out a 'year' isn't some fixed, universal thing -- it
+    depends on how big your loop around the Sun is, which is a genuinely clever, grown-up-scientist realization!
+  relates_to:
+  - concept_id: stars_are_suns
+    transition_hint: We just figured out that a year depends on circling a sun -- and we also learned
+      that EVERY star is a sun. So somewhere out there, on a planet circling one of those other stars,
+      what do you think a 'year' might look like?
+wrap_up_message: 'Congratulate the child warmly on cracking all three big space ideas today. Tie them
+  together briefly: looking up means looking back in time, the stars they see are just incredibly far-away
+  suns, and a ''year'' anywhere is really just one trip around a sun. Celebrate their curiosity and encourage
+  them to keep looking up and wondering.'

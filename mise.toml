@@ -1,0 +1,26 @@
+[tools]
+python = "3.11"
+
+[tasks.start]
+run = "uv run main.py"
+description = "Run recipe"
+
+[tasks.lint]
+description = "Run lint checks"
+run = "uv run ruff check ."
+
+[tasks.lint-fix]
+description = "Run lint auto-fixes"
+run = "uv run ruff check . --fix"
+
+[tasks.format]
+description = "Format code"
+run = "uv run ruff format ."
+
+[tasks.format-check]
+description = "Check code formatting"
+run = "uv run ruff format . --check"
+
+[tasks.typecheck]
+description = "Run static type checking"
+run = "uv run mypy ."

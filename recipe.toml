@@ -1,0 +1,16 @@
+# Recipe-specific configuration
+
+[tutor]
+lesson_path = "lessons/space_basics.yaml"
+# "console" runs the entire experience through this terminal (typed input,
+# printed actions) -- safe everywhere, including on a Mac. "tjbot" makes real
+# speak()/listen()/wave()/shine() hardware calls -- only set this when
+# actually running on a TJBot.
+interface = "console"
+
+[tutor.llm]
+provider = "ollama"            # "anthropic" | "ollama"
+ollama_model = "granite4.1:3b"          # used when provider = "ollama"
+anthropic_model = "claude-sonnet-4-6"   # used when provider = "anthropic"
+anthropic_effort = "low"       # "low" | "medium" | "high" -- anthropic only
+ollama_host = "http://localhost:11434"

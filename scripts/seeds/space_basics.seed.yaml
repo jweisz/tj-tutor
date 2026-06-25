@@ -1,0 +1,35 @@
+id: space_basics
+title: "Space Basics: Light, Stars, and Years"
+audience: "children ages 6-8"
+wrap_up_message: >
+  Congratulate the child warmly on cracking all three big space ideas today.
+  Tie them together briefly: looking up means looking back in time, the stars
+  they see are just incredibly far-away suns, and a "year" anywhere is really
+  just one trip around a sun. Celebrate their curiosity and encourage them to
+  keep looking up and wondering.
+concepts:
+  - id: looking_back_in_time
+    domain: space
+    title: "Looking Up Is Looking Back in Time"
+    summary: >
+      Light travels at a finite (very fast, but not infinite) speed. Because
+      stars and planets are so far away, the light reaching our eyes left its
+      source long ago -- so when we look at the night sky, we are seeing the
+      past, not the present.
+    relates_to_ids: [stars_are_suns]
+  - id: stars_are_suns
+    domain: stars
+    title: "Stars Are Other Suns, Just Impossibly Far Away"
+    summary: >
+      The tiny twinkling points of light in the night sky are not actually
+      small -- they are huge, sun-like fireballs. They only look tiny because
+      of their staggering distance from us, not because of their actual size.
+    relates_to_ids: [looking_back_in_time, a_year_is_an_orbit]
+  - id: a_year_is_an_orbit
+    domain: planets
+    title: "A 'Year' Is Just One Trip Around the Sun"
+    summary: >
+      A "year" is defined as one full orbit around the sun. Since farther
+      planets travel a longer path, and travel it more slowly, a "year" on a
+      distant planet like Saturn is far longer than one Earth year.
+    relates_to_ids: [stars_are_suns]
