@@ -4,9 +4,9 @@ call carries both jobs -- no separate relevance-classification call."""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 
 from tutor.lesson import Concept, LessonPlan
 from tutor.llm.base import Message
@@ -58,57 +58,115 @@ class EvaluatorResult(BaseModel):
     )
 
 
+def evaluator_result_model(lesson: LessonPlan) -> type[EvaluatorResult]:
+    """A lesson-specific EvaluatorResult whose id fields are enums of the lesson's
+    actual concept/criterion/misconception ids. Grammar-constrained backends then
+    can't emit an invalid id at all -- small models otherwise put criterion ids in
+    target_concept_id, or write things like "null" or "misconception id: x" into
+    criteria_met. Instances are still EvaluatorResults, so callers don't change."""
+    concept_ids = [c.id for c in lesson.concepts]
+    criterion_ids = [r.id for c in lesson.concepts for r in c.mastery_rubric]
+    misconception_ids = [m.id for c in lesson.concepts for m in c.misconceptions]
+    base_fields = EvaluatorResult.model_fields
+
+    def enum(ids: list[str]) -> Any:
+        return Literal[tuple(ids)]  # type: ignore[valid-type]
+
+    overrides: dict[str, Any] = {
+        "target_concept_id": (
+            enum(concept_ids) | None,
+            Field(default=None, description=base_fields["target_concept_id"].description),
+        ),
+    }
+    if criterion_ids:
+        overrides["criteria_met"] = (
+            list[enum(criterion_ids)],  # type: ignore[misc]
+            Field(default_factory=list, description=base_fields["criteria_met"].description),
+        )
+    if misconception_ids:
+        overrides["demonstrates_misconception_id"] = (
+            enum(misconception_ids) | None,
+            Field(default=None, description=base_fields["demonstrates_misconception_id"].description),
+        )
+    return create_model("EvaluatorResult", __base__=EvaluatorResult, **overrides)
+
+
 EVALUATOR_PERSONA = """\
 You are the evaluation module for a Socratic tutor for {audience}.
 You never speak to the student and you never teach. Your only job is to read the
 student's latest message and produce a structured judgment about it: which topic
-it's about, and whether it provides evidence the student understands the concept
-currently being taught.
+it's about, and whether it provides evidence the student understands a concept.
+
+## Step 1: relevance -- decide in this order
+
+1. off_topic: the message is not about the ideas in any of the lesson's concepts.
+   Small talk, food, pets, games, the student's day, feelings, questions about the
+   tutor, and requests to do something else are all off_topic. Young children say
+   things like this often, so off_topic is a common, perfectly normal judgment.
+   Never stretch to connect an unrelated message to a concept.
+2. Otherwise, compare the message's main idea against EVERY concept's summary
+   (the current one and the others listed below) and pick the closest match:
+   - current_concept: it best matches the concept currently being taught, or it
+     answers the tutor's question -- including wrong answers, guesses,
+     misconceptions, partial ideas, and "I don't know".
+   - other_concept: its main idea clearly matches one of the OTHER concepts'
+     summaries better than the current one -- even if it mentions words from
+     the current concept too.
+
+## Step 2: target_concept_id
+
+The id of the concept the message is about, copied EXACTLY from the "concept id"
+values listed below: {concept_ids}. Use the current concept's id for
+current_concept, the other concept's id for other_concept, and null for
+off_topic. Criterion ids and misconception ids are NOT concept ids -- never put
+them in target_concept_id.
+
+## Step 3: evidence
 
 Be conservative about marking criteria_met -- only mark a criterion when the
 student's own words clearly demonstrate the understanding, not just that the
-question touched on the topic. A student often says something partially right;
-partial credit belongs in demonstrates_insight, not in criteria_met.
-
-IMPORTANT rule for target_concept_id: read the student's message and decide
-which ONE of the listed concepts it is actually about, by content -- do not
-default to whichever concept happens to be "currently teaching" just because
-it's listed first or described in more detail. If the message is clearly
-about one of the "other" concepts instead, you MUST set relevance to
-other_concept AND set target_concept_id to that other concept's exact id
-(never leave target_concept_id null when relevance is other_concept)."""
+message touched on the topic. Only use criterion ids listed under the target
+concept. A student often says something partially right; partial credit belongs
+in demonstrates_insight, not in criteria_met. If the message expresses one of
+the known misconceptions -- even as a confident answer -- set
+demonstrates_misconception_id to its id. Leave everything empty/null for
+off_topic messages."""
 
 
 def _render_current_concept(concept: Concept) -> str:
     lines = [
-        f"## Currently teaching: {concept.title} (id: {concept.id})",
+        f"## Currently teaching -- concept id: {concept.id}",
+        f"Title: {concept.title}",
         f"Summary: {concept.summary}",
         "",
-        "Mastery rubric (the only criteria you may report as met -- copy these id values",
-        "EXACTLY and bare, with no quotes and no 'id=' prefix, e.g. just light_takes_time):",
+        "Mastery criteria (copy criterion ids EXACTLY and bare, e.g. just "
+        f"{concept.mastery_rubric[0].id}):",
     ]
     for criterion in concept.mastery_rubric:
-        lines.append(f'- criterion_id: "{criterion.id}"')
+        lines.append(f"- criterion id: {criterion.id}")
         lines.append(f"  description: {criterion.description}")
         if criterion.example_phrases:
             examples = "; ".join(criterion.example_phrases)
             lines.append(f"  example phrasings that would satisfy this: {examples}")
     if concept.misconceptions:
         lines.append("")
-        lines.append("Known misconceptions for this concept (copy misconception_id bare, same rule):")
+        lines.append("Known misconceptions (copy misconception ids bare, same rule):")
         for m in concept.misconceptions:
-            lines.append(f'- misconception_id: "{m.id}"')
+            lines.append(f"- misconception id: {m.id}")
             lines.append(f"  description: {m.description}")
     return "\n".join(lines)
 
 
 def _render_sibling_concepts(siblings: list[Concept]) -> str:
-    lines = [
-        "## Other target concepts in this lesson (for relevance classification only -- copy "
-        "concept_id values EXACTLY and bare, with no quotes):"
-    ]
+    # Sibling rubric ids are listed so a correct other_concept judgment can report
+    # criteria from the right rubric instead of inventing ids.
+    lines = ["## Other concepts in this lesson (only for other_concept messages)"]
     for concept in siblings:
-        lines.append(f'- concept_id: "{concept.id}", title: "{concept.title}": {concept.summary}')
+        lines.append(f"- concept id: {concept.id}")
+        lines.append(f"  title: {concept.title}")
+        lines.append(f"  summary: {concept.summary}")
+        criteria = "; ".join(f"{c.id} ({c.description})" for c in concept.mastery_rubric)
+        lines.append(f"  criterion ids: {criteria}")
     return "\n".join(lines)
 
 
@@ -130,7 +188,10 @@ def build_evaluator_messages(
     )
 
     sections = [
-        EVALUATOR_PERSONA.format(audience=lesson.audience),
+        EVALUATOR_PERSONA.format(
+            audience=lesson.audience,
+            concept_ids=", ".join(c.id for c in lesson.concepts),
+        ),
         _render_current_concept(current),
         _render_sibling_concepts(siblings),
     ]

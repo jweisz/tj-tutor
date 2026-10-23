@@ -1,5 +1,5 @@
 """Provider-agnostic LLM interface. Both AnthropicProvider and OllamaProvider
-implement this Protocol so the orchestrator/evaluator/tutor_speech modules
+implement this Protocol (as does LMStudioProvider) so the orchestrator/evaluator/tutor_speech modules
 never need to know which backend is active."""
 
 from __future__ import annotations
@@ -12,6 +12,14 @@ from pydantic import BaseModel
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
 Message = dict[str, str]  # {"role": "user" | "assistant", "content": str}
+
+# Reasoning effort for local reasoning models (Gemma 4, Granite 4.2, Qwen3, ...),
+# used by the Ollama and LM Studio providers. "none" disables thinking.
+Reasoning = Literal["none", "low", "medium", "high"]
+# Reasoning models spend completion tokens on hidden reasoning before writing
+# any answer -- with only the caller's max_tokens they can exhaust it and
+# return an empty reply. When reasoning is on, give them this much extra room.
+REASONING_TOKEN_ALLOWANCE = 2048
 
 
 class ProviderError(Exception):
@@ -40,13 +48,13 @@ class LLMResponse:
     usage: TokenUsage
     latency_ms: float
     model: str
-    provider_name: Literal["anthropic", "ollama"]
+    provider_name: Literal["anthropic", "ollama", "lmstudio"]
     raw: dict[str, Any]
 
 
 class LLMProvider(Protocol):
     @property
-    def name(self) -> Literal["anthropic", "ollama"]: ...
+    def name(self) -> Literal["anthropic", "ollama", "lmstudio"]: ...
 
     @property
     def model(self) -> str: ...
