@@ -21,8 +21,8 @@ from tutor.llm.base import (
     TokenUsage,
 )
 
-DEFAULT_MODEL = "granite4.1:3b"  # noticeably more reliable than granite3.3:2b at the
-# structured evaluator task in practice; see verification notes for the comparison.
+DEFAULT_MODEL = "gemma4:e2b"  # Gemma 4 was the best local model on scripts/eval_evaluator.py
+# (README: "Evaluator test results"); E2B is the size that fits on a Raspberry Pi.
 DEFAULT_HOST = "http://localhost:11434"
 
 

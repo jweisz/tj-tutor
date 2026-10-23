@@ -27,7 +27,7 @@ listen_reprompt_secs = 5.0
 provider = "anthropic"
 
 # These parameters are used when provider = "ollama"
-ollama_model = "granite4.1:3b"          # we also recomend trying "gemma4:e2b"
+ollama_model = "gemma4:e2b"             # use "gemma4:e4b" when serving from a Mac/PC
 ollama_host = "http://localhost:11434"  # URL to your ollama instance
 ollama_reasoning = "none"               # "none" | "low" | "medium" | "high" -- for reasoning models
                                         # like Gemma 4 / Qwen3; anything but "none" adds a lot of latency

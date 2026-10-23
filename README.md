@@ -19,7 +19,7 @@ The hardware above is only needed when running with `--interface tjbot`. By defa
 
 Either way, you'll also need one LLM backend:
 
-- [Ollama](https://ollama.com) running locally with a model pulled (e.g. `ollama pull granite4.1:3b`) -- free, no API key, and the default.
+- [Ollama](https://ollama.com) running locally with a model pulled (e.g. `ollama pull gemma4:e2b`) -- free, no API key, and the default.
 - [LM Studio](https://lmstudio.ai) (desktop app) or llmster (its headless daemon) serving a model, on this machine or another one on your network. See [Using LM Studio or llmster](#using-lm-studio-or-llmster).
 - An [Anthropic API key](https://console.anthropic.com) -- put it in a `.env` file and set `provider = "anthropic"` in `recipe.toml` for noticeably better dialogue quality and judgment. See [Configure](#configure) for how to set it up.
 
@@ -48,7 +48,7 @@ interface = "console"          # "console" (this terminal) | "tjbot" (real hardw
 
 [tutor.llm]
 provider = "ollama"            # "anthropic" | "ollama" | "lmstudio"
-ollama_model = "granite4.1:3b"
+ollama_model = "gemma4:e2b"
 anthropic_model = "claude-sonnet-4-6"
 anthropic_effort = "low"        # "low" | "medium" | "high" -- anthropic only
 ollama_host = "http://localhost:11434"
@@ -154,12 +154,14 @@ Each turn makes **two** LLM calls (evaluate, then respond), and each one sends r
 | A Mac (Apple Silicon) or a PC with a GPU, via Ollama or LM Studio | A few seconds per turn | E.g. Gemma 4 E4B in LM Studio on an iMac takes about 2-4 s per call once loaded. TJBot reaches it over your network (`ollama_host` / `lmstudio_host`). |
 | The Raspberry Pi itself (CPU only) | Tens of seconds per turn | Works fully offline, but is slow. Fine for testing, sluggish for a child. |
 
-**Recommended models.** The evaluator needs a model that reliably follows a JSON schema, which rules out the tiniest models. 3-4B-parameter models at 4-bit quantization are the practical sweet spot:
+**Recommended model: Google Gemma 4.** It was the best local model in our [evaluator tests](#evaluator-test-results), ahead of larger Qwen 3.5 and Granite 4.2 models. Pick the size for where it runs:
 
-- **IBM Granite** (`granite4.1:3b` in Ollama, the default; `ibm/granite-4.2-3b` in LM Studio). `granite4.1:3b` was chosen as the Ollama default because it handles the structured evaluator task noticeably better than smaller models. Granite 4.2 scored lower than Gemma 4 in LM Studio, though (see [Evaluator test results](#evaluator-test-results)).
-- **Google Gemma 4** (`gemma4:e2b` / `gemma4:e4b` in Ollama; `google/gemma-4-e2b` / `google/gemma-4-e4b` in LM Studio). E2B is the better fit for a Pi. E4B is noticeably better but needs more memory and is slower.
+| Where the model runs | Model | Ollama | LM Studio / llmster |
+| --- | --- | --- | --- |
+| Raspberry Pi | Gemma 4 E2B (the default) | `gemma4:e2b` | `google/gemma-4-e2b` |
+| Mac or GPU PC, serving TJBot over the network | Gemma 4 E4B | `gemma4:e4b` | `google/gemma-4-e4b` |
 
-Smaller (~1B) models respond faster but misjudge student answers much more often, e.g. treating off-topic chatter as progress. Larger models aren't automatically better at this task (see [Evaluator test results](#evaluator-test-results)) and are impractical on a Pi.
+E4B scored 93% on the evaluator test suite. E2B is recommended for the Pi because of its size, but it hasn't been through the test suite yet, so expect somewhat weaker judgment than E4B. Other models work too (any Ollama or LM Studio model name will do), but the evaluator needs one that reliably follows a JSON schema. Tiny (~1B) models misjudge student answers much more often, and bigger isn't automatically better: both 8-9B models we tested scored lower than Gemma 4 E4B.
 
 **Tips for keeping it responsive:**
 
@@ -198,7 +200,7 @@ What we learned along the way, which is mostly why the current evaluator looks t
 - **Forbid extra JSON keys.** Without `additionalProperties: false`, Qwen added an unrequested `reasoning` essay to every result, tripling latency (8-10 s down to 3 s).
 - **Reasoning models need reasoning off, and builds differ.** With reasoning on, Gemma 4 spent its whole token budget thinking and returned empty replies. MLX Granite 4.2 can't have reasoning disabled in LM Studio, and LM Studio then files its JSON answer under `reasoning_content`. The LM Studio provider falls back to reading it from there.
 
-Not yet tested: Raspberry Pi hardware, Ollama, and the smaller Gemma 4 E2B / Granite 4.2 3B models. If you test them, add a row.
+Not yet tested: Raspberry Pi hardware, Ollama, and Gemma 4 E2B (the recommended Pi model and the Ollama default). If you test them, add a row.
 
 #### Using LM Studio or llmster
 
@@ -211,7 +213,7 @@ Not yet tested: Raspberry Pi hardware, Ollama, and the smaller Gemma 4 E2B / Gra
   ```sh
   curl -fsSL https://lmstudio.ai/install.sh | bash   # installs llmster and the `lms` CLI
   lms daemon up                                      # start the daemon
-  lms get <model>                                    # download a model, e.g. a small Qwen/Gemma/Granite
+  lms get google/gemma-4-e4b                         # download a model (gemma-4-e2b on a Pi)
   lms server start --bind 0.0.0.0                    # listen on the network (default port 1234)
   ```
   Leave off `--bind 0.0.0.0` if the tutor runs on the same machine. For a Raspberry Pi, see [Running llmster on a Raspberry Pi](#running-llmster-on-a-raspberry-pi) below.
@@ -222,7 +224,7 @@ Not yet tested: Raspberry Pi hardware, Ollama, and the smaller Gemma 4 E2B / Gra
 [tutor.llm]
 provider = "lmstudio"
 lmstudio_host = "http://192.168.1.50:1234"   # the server's IP/hostname; http://localhost:1234 if local
-lmstudio_model = "qwen/qwen3-4b"             # a key from `lms ls`; leave "" to use the first model listed
+lmstudio_model = "google/gemma-4-e4b"        # a key from `lms ls`; leave "" to use the first model listed
 ```
 
 Check that the tutor's machine can reach the server with `curl http://192.168.1.50:1234/v1/models`.
@@ -254,8 +256,8 @@ lms --help           # check that the install worked
 
 ```sh
 lms daemon up                 # start llmster
-lms get <model>               # e.g. a small Qwen3, Gemma, or Granite model
-lms ls                        # shows the model key to put in recipe.toml
+lms get google/gemma-4-e2b    # the recommended model for a Pi
+lms ls                        # shows the exact model key to put in recipe.toml
 lms load <model-key>          # load it into memory
 lms server start              # add --bind 0.0.0.0 if TJBot is on a different machine
 curl http://localhost:1234/v1/models
@@ -266,7 +268,7 @@ curl http://localhost:1234/v1/models
 ```toml
 [tutor.llm]
 provider = "lmstudio"
-lmstudio_model = "<model-key>"                # from `lms ls`
+lmstudio_model = "google/gemma-4-e2b"         # the exact key from `lms ls`
 lmstudio_host = "http://localhost:1234"       # llmster on TJBot's own Pi
 # lmstudio_host = "http://llm-pi.local:1234"  # llmster on a separate Pi
 ```
