@@ -162,9 +162,19 @@ class LMStudioProvider:
     def _content(response: Any) -> str:
         return _THINK_RE.sub("", response.choices[0].message.content or "").strip()
 
+    def _structured_content(self, response: Any) -> str:
+        # When LM Studio can't toggle a model's reasoning (e.g. MLX Granite 4.2:
+        # "No valid custom reasoning fields found"), it can file the entire
+        # schema-constrained JSON under reasoning_content and leave content
+        # empty. Only for structured calls: the JSON is still the answer.
+        content = self._content(response)
+        if not content:
+            content = (getattr(response.choices[0].message, "reasoning_content", None) or "").strip()
+        return content
+
     def _parse(self, response: Any, response_model: type[ModelT]) -> tuple[ModelT | None, str | None]:
         try:
-            return response_model.model_validate(json.loads(self._content(response))), None
+            return response_model.model_validate(json.loads(self._structured_content(response))), None
         except (json.JSONDecodeError, ValidationError) as exc:
             return None, str(exc)
 

@@ -156,17 +156,49 @@ Each turn makes **two** LLM calls (evaluate, then respond), and each one sends r
 
 **Recommended models.** The evaluator needs a model that reliably follows a JSON schema, which rules out the tiniest models. 3-4B-parameter models at 4-bit quantization are the practical sweet spot:
 
-- **IBM Granite** (`granite4.1:3b` in Ollama, the default; `ibm/granite-4.2-3b` in LM Studio). Chosen as the default because it handles the structured evaluator task noticeably better than smaller models.
+- **IBM Granite** (`granite4.1:3b` in Ollama, the default; `ibm/granite-4.2-3b` in LM Studio). `granite4.1:3b` was chosen as the Ollama default because it handles the structured evaluator task noticeably better than smaller models. Granite 4.2 scored lower than Gemma 4 in LM Studio, though (see [Evaluator test results](#evaluator-test-results)).
 - **Google Gemma 4** (`gemma4:e2b` / `gemma4:e4b` in Ollama; `google/gemma-4-e2b` / `google/gemma-4-e4b` in LM Studio). E2B is the better fit for a Pi. E4B is noticeably better but needs more memory and is slower.
 
-Smaller (~1B) models respond faster but misjudge student answers much more often, e.g. treating off-topic chatter as progress. Larger (7B+) models judge better but are impractical on a Pi.
+Smaller (~1B) models respond faster but misjudge student answers much more often, e.g. treating off-topic chatter as progress. Larger models aren't automatically better at this task (see [Evaluator test results](#evaluator-test-results)) and are impractical on a Pi.
 
 **Tips for keeping it responsive:**
 
 - **Serve the model from a faster machine** if you have one. Run Ollama or LM Studio on a Mac or PC and point TJBot's Pi at it. No other changes are needed.
-- **Keep reasoning off.** Reasoning models (Gemma 4, Granite 4.2, Qwen3, ...) can take many times longer when they think before answering. Both local providers disable this by default (`ollama_reasoning` / `lmstudio_reasoning = "none"`).
+- **Keep reasoning off.** Reasoning models (Gemma 4, Granite 4.2, Qwen3, ...) can take many times longer when they think before answering. Both local providers disable this by default (`ollama_reasoning` / `lmstudio_reasoning = "none"`). Some model builds ignore this setting, though. If LM Studio's log says *"No valid custom reasoning fields found... Reasoning setting 'off' cannot be converted"*, that model will think anyway.
 - **Keep the model loaded.** The first call after the model loads, or after it unloads from sitting idle, is much slower than the rest.
 - **Watch the dashboard.** The stats panel shows per-call latency, so you can compare models directly. `thinking_delay_secs` controls how soon TJBot says it's thinking, so the student isn't left in silence.
+
+#### Evaluator test results
+
+The part of the tutor most sensitive to model quality is the **evaluator**: the structured call that decides whether a student's message is about the current concept, a different concept, or off-topic, and which rubric criteria it satisfies. A wrong call has visible consequences. If "I like pizza" is judged to be about another concept, TJBot abandons the current topic and switches to it.
+
+`scripts/eval_evaluator.py` runs a fixed set of 18 student messages through the evaluator and scores each result by what the orchestrator would actually do with it. The set covers answers to the current concept, a misconception, off-topic chatter, and questions about the other two concepts, all written for `lessons/space_basics.yaml`. Use it to compare models before deploying, and re-run it after changing the evaluator prompt in `tutor/evaluator.py`:
+
+```sh
+uv run python scripts/eval_evaluator.py --provider lmstudio --model google/gemma-4-e4b \
+  --host http://192.168.1.50:1234 --repeats 3
+uv run python scripts/eval_evaluator.py --provider anthropic --model claude-sonnet-4-6
+```
+
+Local models vary from run to run, so use `--repeats 3` for them. `--verbose` prints passing cases too.
+
+Results so far (October 2026, 3 runs each; local models served by LM Studio on an Apple Silicon iMac; latency is the median per evaluator call):
+
+| Model | Provider | Passed | Median latency | Notes |
+| --- | --- | --- | --- | --- |
+| `claude-sonnet-4-6` | anthropic | 54/54 (100%) | 2.1 s | Reference. |
+| `google/gemma-4-e4b` (4-bit) | lmstudio | 50/54 (93%) | 2.5 s | Best local option tested. Misses are mild: it sometimes keeps "is the sun a star?" on the current concept instead of switching. |
+| `qwen/qwen3.5-9b` (4-bit) | lmstudio | 46/54 (85%) | 3.0 s | Larger but less consistent: misses the misconception, and sometimes calls orbit or star questions off-topic. |
+| `granite-4.2-8b-mlx` (8-bit) | lmstudio | 35/54 (65%) | 3.8 s | Over-cautious: calls many genuine answers off-topic, so students miss credit, though it never derails the lesson. LM Studio can't turn this MLX build's reasoning off (see the tip above). |
+
+What we learned along the way, which is mostly why the current evaluator looks the way it does:
+
+- **Small models over-apply emphatic rules.** An earlier prompt said "you MUST set other_concept" when a message was about another concept. Gemma and Qwen then sent nearly every off-topic message to *some* concept (Gemma 11/18, Qwen 7/18 on a single run). Ordering the decision with off-topic first, and presenting it as a normal answer, fixed most of that.
+- **Constrain ids with the schema, not the prompt.** Models put criterion ids in `target_concept_id`, or wrote `"null"` and `"misconception id: instant_seeing"` into `criteria_met`. The evaluator's response schema now lists the lesson's actual ids as enums (`evaluator_result_model()`), so grammar-constrained backends can't produce an invalid one.
+- **Forbid extra JSON keys.** Without `additionalProperties: false`, Qwen added an unrequested `reasoning` essay to every result, tripling latency (8-10 s down to 3 s).
+- **Reasoning models need reasoning off, and builds differ.** With reasoning on, Gemma 4 spent its whole token budget thinking and returned empty replies. MLX Granite 4.2 can't have reasoning disabled in LM Studio, and LM Studio then files its JSON answer under `reasoning_content`. The LM Studio provider falls back to reading it from there.
+
+Not yet tested: Raspberry Pi hardware, Ollama, and the smaller Gemma 4 E2B / Granite 4.2 3B models. If you test them, add a row.
 
 #### Using LM Studio or llmster
 
