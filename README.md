@@ -161,7 +161,7 @@ Each turn makes **two** LLM calls (evaluate, then respond), and each one sends r
 | Raspberry Pi | Gemma 4 E2B (the default) | `gemma4:e2b` | `google/gemma-4-e2b` |
 | Mac or GPU PC, serving TJBot over the network | Gemma 4 E4B | `gemma4:e4b` | `google/gemma-4-e4b` |
 
-E4B scored 93% on the evaluator test suite. E2B is recommended for the Pi because of its size, but it hasn't been through the test suite yet, so expect somewhat weaker judgment than E4B. Other models work too (any Ollama or LM Studio model name will do), but the evaluator needs one that reliably follows a JSON schema. Tiny (~1B) models misjudge student answers much more often, and bigger isn't automatically better: both 8-9B models we tested scored lower than Gemma 4 E4B.
+E4B scored 93% on the evaluator test suite and E2B scored 78%. E2B's misses all go the safe way: it never pulls the lesson off course, but it doesn't follow a student who asks about the *next* topic early, and it doesn't flag misconceptions. It's also the fastest model we tested, which matters most on a Pi. Other models work too (any Ollama or LM Studio model name will do), but the evaluator needs one that reliably follows a JSON schema. Tiny (~1B) models misjudge student answers much more often, and bigger isn't automatically better: both 8-9B models we tested scored lower than Gemma 4 E4B.
 
 **Tips for keeping it responsive:**
 
@@ -190,6 +190,7 @@ Results so far (October 2026, 3 runs each; local models served by LM Studio on a
 | --- | --- | --- | --- | --- |
 | `claude-sonnet-4-6` | anthropic | 54/54 (100%) | 2.1 s | Reference. |
 | `google/gemma-4-e4b` (4-bit) | lmstudio | 50/54 (93%) | 2.5 s | Best local option tested. Misses are mild: it sometimes keeps "is the sun a star?" on the current concept instead of switching. |
+| `google/gemma-4-e2b` (4-bit) | lmstudio | 42/54 (78%) | 1.0 s | Fastest tested. Fails the same 4 cases every run, all in the safe direction: it calls questions about the other concepts off-topic (so TJBot steers back instead of following) and misses the misconception. Never derails the lesson. |
 | `qwen/qwen3.5-9b` (4-bit) | lmstudio | 46/54 (85%) | 3.0 s | Larger but less consistent: misses the misconception, and sometimes calls orbit or star questions off-topic. |
 | `granite-4.2-8b-mlx` (8-bit) | lmstudio | 35/54 (65%) | 3.8 s | Over-cautious: calls many genuine answers off-topic, so students miss credit, though it never derails the lesson. LM Studio can't turn this MLX build's reasoning off (see the tip above). |
 
@@ -200,7 +201,7 @@ What we learned along the way, which is mostly why the current evaluator looks t
 - **Forbid extra JSON keys.** Without `additionalProperties: false`, Qwen added an unrequested `reasoning` essay to every result, tripling latency (8-10 s down to 3 s).
 - **Reasoning models need reasoning off, and builds differ.** With reasoning on, Gemma 4 spent its whole token budget thinking and returned empty replies. MLX Granite 4.2 can't have reasoning disabled in LM Studio, and LM Studio then files its JSON answer under `reasoning_content`. The LM Studio provider falls back to reading it from there.
 
-Not yet tested: Raspberry Pi hardware, Ollama, and Gemma 4 E2B (the recommended Pi model and the Ollama default). If you test them, add a row.
+Not yet tested: Raspberry Pi hardware (expect the same pass rates, with much higher latency) and Ollama. If you test them, add a row.
 
 #### Using LM Studio or llmster
 
