@@ -64,6 +64,8 @@ def _apply_recipe_section(config: AppConfig, tutor_section: dict[str, Any]) -> A
             provider_data["effort"] = llm_section["anthropic_effort"]
         if "ollama_host" in llm_section:
             provider_data["ollama_host"] = llm_section["ollama_host"]
+        if "ollama_reasoning" in llm_section:
+            provider_data["ollama_reasoning"] = llm_section["ollama_reasoning"]
         if "lmstudio_host" in llm_section:
             provider_data["lmstudio_host"] = llm_section["lmstudio_host"]
         if "lmstudio_reasoning" in llm_section:

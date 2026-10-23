@@ -11,10 +11,12 @@ import ollama
 from pydantic import ValidationError
 
 from tutor.llm.base import (
+    REASONING_TOKEN_ALLOWANCE,
     LLMResponse,
     Message,
     ModelT,
     ProviderError,
+    Reasoning,
     StructuredOutputError,
     TokenUsage,
 )
@@ -27,8 +29,11 @@ DEFAULT_HOST = "http://localhost:11434"
 class OllamaProvider:
     name: Literal["ollama"] = "ollama"
 
-    def __init__(self, model: str = DEFAULT_MODEL, host: str = DEFAULT_HOST) -> None:
+    def __init__(self, model: str = DEFAULT_MODEL, host: str = DEFAULT_HOST, reasoning: Reasoning = "none") -> None:
         self._model = model
+        # "none" by default, as for LM Studio: thinking adds far too much
+        # latency to a spoken tutor turn.
+        self._think: bool | Literal["low", "medium", "high"] = False if reasoning == "none" else reasoning
         self._client = ollama.Client(host=host)
 
     @property
@@ -47,7 +52,8 @@ class OllamaProvider:
             response = self._client.chat(
                 model=self._model,
                 messages=chat_messages,
-                options={"num_predict": max_tokens},
+                think=self._think,
+                options={"num_predict": self._num_predict(max_tokens)},
             )
         except Exception as exc:  # noqa: BLE001 -- ollama raises plain/HTTP errors, not a typed hierarchy
             raise ProviderError(f"Ollama request failed: {exc}") from exc
@@ -116,7 +122,8 @@ class OllamaProvider:
                 model=self._model,
                 messages=chat_messages,
                 format=schema,
-                options={"num_predict": max_tokens},
+                think=self._think,
+                options={"num_predict": self._num_predict(max_tokens)},
             )
         except Exception as exc:  # noqa: BLE001
             raise ProviderError(f"Ollama request failed: {exc}") from exc
@@ -128,6 +135,9 @@ class OllamaProvider:
         except (json.JSONDecodeError, ValidationError) as exc:
             return response, None, str(exc)
         return response, parsed, None
+
+    def _num_predict(self, max_tokens: int) -> int:
+        return max_tokens if self._think is False else max_tokens + REASONING_TOKEN_ALLOWANCE
 
     @staticmethod
     def _latency_ms(response: ollama.ChatResponse) -> float:

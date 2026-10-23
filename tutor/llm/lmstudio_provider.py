@@ -17,23 +17,18 @@ from dotenv import load_dotenv
 from pydantic import ValidationError
 
 from tutor.llm.base import (
+    REASONING_TOKEN_ALLOWANCE,
     LLMResponse,
     Message,
     ModelT,
     ProviderError,
+    Reasoning,
     StructuredOutputError,
     TokenUsage,
 )
 
 DEFAULT_MODEL = None  # None -> use whichever model LM Studio lists first (see _resolve_model)
 DEFAULT_HOST = "http://localhost:1234"
-
-Reasoning = Literal["none", "low", "medium", "high"]
-# Reasoning models (e.g. Gemma 4, Qwen3) spend completion tokens on hidden
-# reasoning_content before writing any answer -- with only the caller's
-# max_tokens they can exhaust it and return an empty reply. When reasoning is
-# on, give them this much extra room.
-REASONING_TOKEN_ALLOWANCE = 2048
 
 # Reasoning models (e.g. Qwen3) can leak their chain of thought into `content`
 # if LM Studio's "separate reasoning_content" server setting is off -- strip it

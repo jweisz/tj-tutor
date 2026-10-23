@@ -52,12 +52,13 @@ ollama_model = "granite4.1:3b"
 anthropic_model = "claude-sonnet-4-6"
 anthropic_effort = "low"        # "low" | "medium" | "high" -- anthropic only
 ollama_host = "http://localhost:11434"
+ollama_reasoning = "none"       # "none" | "low" | "medium" | "high" -- ollama reasoning models only
 lmstudio_model = ""             # empty = first model the server lists
 lmstudio_host = "http://localhost:1234"
 lmstudio_reasoning = "none"     # "none" | "low" | "medium" | "high" -- lmstudio reasoning models only
 ```
 
-`lesson_path` and `interface` can also be overridden for a single run without editing the file, via `--lesson` and `--interface` command-line flags. Everything under `[tutor.llm]` (provider, model, effort, Ollama/LM Studio host) is recipe.toml-only -- edit the file to change your LLM backend.
+`lesson_path` and `interface` can also be overridden for a single run without editing the file, via `--lesson` and `--interface` command-line flags. Everything under `[tutor.llm]` (provider, model, effort, Ollama/LM Studio host and reasoning) is recipe.toml-only -- edit the file to change your LLM backend.
 
 If `provider = "anthropic"`, you need an `ANTHROPIC_API_KEY`. Copy `.env.sample` to `.env` and fill in your key:
 
@@ -129,7 +130,7 @@ This recipe ships with one lesson, `lessons/space_basics.yaml`, covering the thr
 
 ### Customization 2: Switch the LLM backend and model
 
-By default this recipe runs entirely offline against a local Ollama model, which is the fastest option for iterating on a lesson. For better dialogue quality and more reliable judgment of what a student actually understands, switch to Anthropic's API by editing `[tutor.llm]` in `recipe.toml`:
+By default this recipe runs entirely offline against a local Ollama model -- free, private, and no API key needed. For better dialogue quality and more reliable judgment of what a student actually understands, switch to Anthropic's API by editing `[tutor.llm]` in `recipe.toml`:
 
 ```toml
 [tutor.llm]
@@ -139,6 +140,33 @@ anthropic_effort = "low"        # "low" | "medium" | "high" -- trades latency/co
 ```
 
 (see [Configure](#configure) for setting up `ANTHROPIC_API_KEY` in `.env`). Any locally-pulled Ollama model can be used the same way via `ollama_model`.
+
+#### Running models locally: speed and model choice
+
+> [!CAUTION]
+> Local models (whether through Ollama or LM Studio) can be **very slow** on modest hardware, and on a Raspberry Pi a single turn can take tens of seconds. That's long enough for the conversation to stop feeling like a conversation. Decide where the model runs before deploying to a real TJBot.
+
+Each turn makes **two** LLM calls (evaluate, then respond), and each one sends roughly 1,000 tokens of prompt (persona, lesson content, and recent conversation) before generating a short reply. On a machine without a GPU, *reading that prompt* is usually the bulk of the wait, not writing the answer. So a turn's latency mostly depends on the hardware the model runs on:
+
+| Where the model runs | Typical feel | Notes |
+| --- | --- | --- |
+| Anthropic API | A few seconds per turn | Fastest and best judgment, but needs internet and an API key. |
+| A Mac (Apple Silicon) or a PC with a GPU, via Ollama or LM Studio | A few seconds per turn | E.g. Gemma 4 E4B in LM Studio on an iMac takes about 2-4 s per call once loaded. TJBot reaches it over your network (`ollama_host` / `lmstudio_host`). |
+| The Raspberry Pi itself (CPU only) | Tens of seconds per turn | Works fully offline, but is slow. Fine for testing, sluggish for a child. |
+
+**Recommended models.** The evaluator needs a model that reliably follows a JSON schema, which rules out the tiniest models. 3-4B-parameter models at 4-bit quantization are the practical sweet spot:
+
+- **IBM Granite** (`granite4.1:3b` in Ollama, the default; `ibm/granite-4.2-3b` in LM Studio). Chosen as the default because it handles the structured evaluator task noticeably better than smaller models.
+- **Google Gemma 4** (`gemma4:e2b` / `gemma4:e4b` in Ollama; `google/gemma-4-e2b` / `google/gemma-4-e4b` in LM Studio). E2B is the better fit for a Pi. E4B is noticeably better but needs more memory and is slower.
+
+Smaller (~1B) models respond faster but misjudge student answers much more often, e.g. treating off-topic chatter as progress. Larger (7B+) models judge better but are impractical on a Pi.
+
+**Tips for keeping it responsive:**
+
+- **Serve the model from a faster machine** if you have one. Run Ollama or LM Studio on a Mac or PC and point TJBot's Pi at it. No other changes are needed.
+- **Keep reasoning off.** Reasoning models (Gemma 4, Granite 4.2, Qwen3, ...) can take many times longer when they think before answering. Both local providers disable this by default (`ollama_reasoning` / `lmstudio_reasoning = "none"`).
+- **Keep the model loaded.** The first call after the model loads, or after it unloads from sitting idle, is much slower than the rest.
+- **Watch the dashboard.** The stats panel shows per-call latency, so you can compare models directly. `thinking_delay_secs` controls how soon TJBot says it's thinking, so the student isn't left in silence.
 
 #### Using LM Studio or llmster
 
@@ -178,7 +206,7 @@ With JIT model loading on (LM Studio's default), the first request loads the mod
 
 llmster runs on 64-bit ARM Linux, so it can run on a Raspberry Pi. That can be TJBot's own Pi, or a second Pi that acts as a model server for one or more TJBots. Some things to know first:
 
-- **Hardware:** use a Raspberry Pi 5, ideally with 8 GB of RAM or more. Older Pis (including the 3B+ that TJBot was originally built on) don't have enough memory or speed to run a useful model. Generation is CPU-only, so stick to small models (roughly 1-4B parameters, 4-bit quantized). Expect a few seconds per response at best. The tutor already says "give me a moment, I'm thinking..." after `thinking_delay_secs`.
+- **Hardware:** use a Raspberry Pi 5, ideally with 8 GB of RAM or more. Older Pis (including the 3B+ that TJBot was originally built on) don't have enough memory or speed to run a useful model. Generation is CPU-only, so stick to small models (roughly 2-4B parameters, 4-bit quantized). Expect each turn to take tens of seconds. See [Running models locally: speed and model choice](#running-models-locally-speed-and-model-choice) before committing to this setup.
 - **OS:** a **64-bit** Raspberry Pi OS (Bookworm or newer). Check with `uname -m`, which should print `aarch64`.
 
 **1. Install llmster** (on the Pi that will serve the model):

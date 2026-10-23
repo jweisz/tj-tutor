@@ -13,6 +13,14 @@ ModelT = TypeVar("ModelT", bound=BaseModel)
 
 Message = dict[str, str]  # {"role": "user" | "assistant", "content": str}
 
+# Reasoning effort for local reasoning models (Gemma 4, Granite 4.2, Qwen3, ...),
+# used by the Ollama and LM Studio providers. "none" disables thinking.
+Reasoning = Literal["none", "low", "medium", "high"]
+# Reasoning models spend completion tokens on hidden reasoning before writing
+# any answer -- with only the caller's max_tokens they can exhaust it and
+# return an empty reply. When reasoning is on, give them this much extra room.
+REASONING_TOKEN_ALLOWANCE = 2048
+
 
 class ProviderError(Exception):
     """Raised for any unrecoverable provider-side failure (network, auth, etc.)."""
