@@ -8,7 +8,7 @@ import threading
 from contextlib import contextmanager
 from collections.abc import Iterator
 
-from tutor.evaluator import EvaluatorResult, build_evaluator_messages
+from tutor.evaluator import EvaluatorResult, build_evaluator_messages, evaluator_result_model
 from tutor.feedback import apply_feedback
 from tutor.interface import TutorInterface
 from tutor.lesson import LessonPlan
@@ -66,6 +66,7 @@ class Orchestrator:
         thinking_delay_secs: float = 3.0,
     ) -> None:
         self.lesson = lesson
+        self._evaluator_model = evaluator_result_model(lesson)
         self.session = session
         self.evaluator_provider = evaluator_provider
         self.tutor_provider = tutor_provider
@@ -150,7 +151,7 @@ class Orchestrator:
         system, messages = build_evaluator_messages(self.lesson, self.session, utterance)
         try:
             response = self.evaluator_provider.complete_structured(
-                system, messages, response_model=EvaluatorResult
+                system, messages, response_model=self._evaluator_model
             )
         except ProviderError as exc:
             self.ui.log_debug(f"[evaluator] FAILED, falling back to off_topic: {exc}")
