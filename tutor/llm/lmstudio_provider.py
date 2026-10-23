@@ -96,12 +96,16 @@ class LMStudioProvider:
         max_tokens: int = 512,
     ) -> LLMResponse:
         # LM Studio only supports the json_schema response format (not json_object).
+        # Pydantic schemas allow extra keys by default, and LM Studio's grammar
+        # honors that -- e.g. Qwen3.5 tacks on an unrequested "reasoning" essay,
+        # tripling latency. Forbid extras so only the requested fields are generated.
+        schema = {**response_model.model_json_schema(), "additionalProperties": False}
         response_format = {
             "type": "json_schema",
             "json_schema": {
                 "name": response_model.__name__,
                 "strict": True,
-                "schema": response_model.model_json_schema(),
+                "schema": schema,
             },
         }
         chat_messages = self._chat_messages(system, messages)
