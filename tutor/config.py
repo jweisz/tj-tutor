@@ -64,6 +64,10 @@ def _apply_recipe_section(config: AppConfig, tutor_section: dict[str, Any]) -> A
             provider_data["effort"] = llm_section["anthropic_effort"]
         if "ollama_host" in llm_section:
             provider_data["ollama_host"] = llm_section["ollama_host"]
+        if "lmstudio_host" in llm_section:
+            provider_data["lmstudio_host"] = llm_section["lmstudio_host"]
+        if "lmstudio_reasoning" in llm_section:
+            provider_data["lmstudio_reasoning"] = llm_section["lmstudio_reasoning"]
         # model is provider-specific, so pick the key matching the (possibly
         # just-updated) provider kind rather than a single shared "model" key.
         kind = provider_data["kind"]
@@ -71,6 +75,8 @@ def _apply_recipe_section(config: AppConfig, tutor_section: dict[str, Any]) -> A
             provider_data["model"] = llm_section["ollama_model"]
         elif kind == "anthropic" and "anthropic_model" in llm_section:
             provider_data["model"] = llm_section["anthropic_model"]
+        elif kind == "lmstudio" and "lmstudio_model" in llm_section:
+            provider_data["model"] = llm_section["lmstudio_model"] or None
         data["provider"] = provider_data
 
     return AppConfig.model_validate(data)

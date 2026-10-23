@@ -1,5 +1,5 @@
 """Provider-agnostic LLM interface. Both AnthropicProvider and OllamaProvider
-implement this Protocol so the orchestrator/evaluator/tutor_speech modules
+implement this Protocol (as does LMStudioProvider) so the orchestrator/evaluator/tutor_speech modules
 never need to know which backend is active."""
 
 from __future__ import annotations
@@ -40,13 +40,13 @@ class LLMResponse:
     usage: TokenUsage
     latency_ms: float
     model: str
-    provider_name: Literal["anthropic", "ollama"]
+    provider_name: Literal["anthropic", "ollama", "lmstudio"]
     raw: dict[str, Any]
 
 
 class LLMProvider(Protocol):
     @property
-    def name(self) -> Literal["anthropic", "ollama"]: ...
+    def name(self) -> Literal["anthropic", "ollama", "lmstudio"]: ...
 
     @property
     def model(self) -> str: ...

@@ -175,8 +175,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Expand a lesson seed into a full lesson plan YAML.")
     parser.add_argument("--seed", required=True, help="path to a *.seed.yaml file")
     parser.add_argument("--out", required=True, help="output path for the generated lesson YAML")
-    parser.add_argument("--provider", choices=["anthropic", "ollama"], default="anthropic")
+    parser.add_argument("--provider", choices=["anthropic", "ollama", "lmstudio"], default="anthropic")
     parser.add_argument("--model", default=None, help="model override (provider-specific)")
+    parser.add_argument("--host", default=None, help="server URL for ollama/lmstudio (default: localhost)")
     parser.add_argument("--force", action="store_true", help="overwrite --out if it already exists")
     parser.add_argument("--only", default=None, help="regenerate a single concept id in place")
     args = parser.parse_args(argv)
@@ -193,7 +194,10 @@ def main(argv: list[str] | None = None) -> int:
     model = args.model
     if model is None and args.provider == "anthropic":
         model = DEFAULT_ANTHROPIC_MODEL
-    provider = build_provider(ProviderConfig(kind=args.provider, model=model))
+    provider_config = ProviderConfig(kind=args.provider, model=model)
+    if args.host is not None:
+        provider_config.ollama_host = provider_config.lmstudio_host = args.host
+    provider = build_provider(provider_config)
     stats = InferenceStats()
 
     try:
